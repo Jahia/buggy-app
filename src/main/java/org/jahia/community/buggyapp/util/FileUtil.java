@@ -10,8 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FileUtil {
+    public static final String TMP_DIR = System.getProperty("java.io.tmpdir");
     private static final Logger LOGGER = LoggerFactory.getLogger(FileUtil.class);
-
+    
     public static File createDirectory(String dir) {
 
         try {
