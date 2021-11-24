@@ -7,7 +7,6 @@ import org.apache.karaf.shell.api.action.Action;
 import org.apache.karaf.shell.api.action.Command;
 import org.apache.karaf.shell.api.action.Option;
 import org.apache.karaf.shell.api.action.lifecycle.Service;
-import org.jahia.community.buggyapp.cpuspike.CPUSpikerThread;
 import org.jahia.community.buggyapp.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
