@@ -9,14 +9,14 @@
     <groupId>org.jahia.community</groupId>
     <artifactId>buggy-app</artifactId>
     <name>buggy-app</name>
-    <version>1.0.4</version>
+    <version>1.0.5-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <description>This is a module, copied and modified from the buggyapp project (ycrash.io, https://github.com/ycrash/buggyapp), to simulate performance issues in Jahia for training purposes</description>
 
     <scm>
         <connection>scm:git:git@github.com:Jahia/buggy-app</connection>
         <developerConnection>scm:git:git@github.com:Jahia/buggy-app</developerConnection>
-        <tag>1_0_4</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
