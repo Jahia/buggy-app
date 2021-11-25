@@ -1,6 +1,5 @@
 package org.jahia.community.buggyapp.metaspaceleak;
 
-import javassist.ClassPool;
 import org.apache.karaf.shell.api.action.Action;
 import org.apache.karaf.shell.api.action.Command;
 import org.apache.karaf.shell.api.action.Option;

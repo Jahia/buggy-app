@@ -22,9 +22,6 @@
     <properties>
         <jahia-depends>default</jahia-depends>
         <jahia-module-type>system</jahia-module-type>
-        <export-package>org.jahia.modules.dependenciesanalyzer.api,
-            org.jahia.modules.dependenciesanalyzer.services.impl,
-            com.google.gson.*</export-package>
     </properties>
 
     <repositories>
@@ -46,6 +43,12 @@
             <groupId>org.apache.karaf.shell</groupId>
             <artifactId>org.apache.karaf.shell.console</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpasyncclient-osgi</artifactId>
+            <version>4.1.4</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 
