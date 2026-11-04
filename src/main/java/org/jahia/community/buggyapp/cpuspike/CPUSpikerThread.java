@@ -4,10 +4,6 @@ import org.jahia.community.buggyapp.common.StoppableThread;
 
 public class CPUSpikerThread extends StoppableThread {
 
-    public CPUSpikerThread(String name) {
-        super(name);
-    }
-
     @Override
     public void run() {
         while (keepRunning()) {

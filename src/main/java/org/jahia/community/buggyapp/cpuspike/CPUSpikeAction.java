@@ -26,8 +26,8 @@ public class CPUSpikeAction extends AbstractBuggyAction {
         requirePositive(duration, "duration");
         requirePositive(numberOfThreads, "number of threads");
         final List<CPUSpikerThread> threads = new ArrayList<>(numberOfThreads);
-        for (int i = 1; i <= numberOfThreads; i++) {
-            threads.add(new CPUSpikerThread("buggy-app-cpu-spike-" + i));
+        for (int i = 0; i < numberOfThreads; i++) {
+            threads.add(new CPUSpikerThread());
         }
         LOGGER.info("CPU spike beginning!");
         runFor(duration, threads);

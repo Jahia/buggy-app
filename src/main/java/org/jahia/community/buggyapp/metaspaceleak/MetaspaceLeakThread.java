@@ -15,6 +15,10 @@ import org.slf4j.LoggerFactory;
  * {@code MetaspaceObject0} in the shared {@code ClassPool.getDefault()}, so every run after the first died with
  * "frozen class (cannot edit)". Classes are defined in this module's class loader (neighbor class), so the
  * metaspace is reclaimed when the bundle is refreshed or uninstalled, instead of requiring a JVM restart.</p>
+ *
+ * <p>The run's {@code ClassPool} deliberately keeps every generated {@code CtClass} while the leak runs: in a heap
+ * dump this is the trail (javassist objects retained by this thread) that the MAT step of the training exercise
+ * follows. The pool is local to the run, so that heap is released when the run ends.</p>
  */
 public class MetaspaceLeakThread extends StoppableThread {
 
@@ -26,21 +30,18 @@ public class MetaspaceLeakThread extends StoppableThread {
     private volatile Exception failure;
 
     public MetaspaceLeakThread() {
-        super("buggy-app-metaspace-leak");
         this.classNamePrefix = MetaspaceLeakThread.class.getPackageName() + ".MetaspaceObject"
                 + RUN_SEQUENCE.incrementAndGet() + "_";
     }
 
     @Override
     public void run() {
-        // A private pool per run, and each CtClass is detached once loaded: otherwise the pool keeps every
-        // CtClass on the heap and the scenario leaks heap as well as metaspace.
+        // Private pool per run: retains the CtClass objects during the run only (see class Javadoc)
         final ClassPool classPool = new ClassPool(true);
         try {
             while (keepRunning()) {
                 final CtClass ctClass = classPool.makeClass(getClassName(classesCreated));
                 ctClass.toClass(MetaspaceLeakThread.class);
-                ctClass.detach();
                 classesCreated++;
                 if (classesCreated % LOG_EVERY == 0) {
                     LOGGER.info("{} new classes created", classesCreated);

@@ -18,8 +18,8 @@ class HeavyIOActionTest {
     @Test
     void workerWritesToItsOwnFileAndDeletesItWhenStopped() throws InterruptedException {
         // Arrange
-        final HeavyIOThread first = new HeavyIOThread("buggy-app-heavy-io-1");
-        final HeavyIOThread second = new HeavyIOThread("buggy-app-heavy-io-2");
+        final HeavyIOThread first = new HeavyIOThread();
+        final HeavyIOThread second = new HeavyIOThread();
 
         // Act
         first.start();
@@ -61,15 +61,23 @@ class HeavyIOActionTest {
 
     @Test
     void workerStopsOnFirstIoFailureInsteadOfFloodingTheLog() throws Exception {
-        final HeavyIOThread thread = new HeavyIOThread("buggy-app-heavy-io-failing");
+        final HeavyIOThread thread = new HeavyIOThread();
         thread.start();
         waitForFile(thread);
 
-        // Replace the file with a directory: every write now fails
+        // Replace the file with a directory so the next I/O fails. The worker may recreate the file between our
+        // delete and createDirectory, or fail on its own as soon as the file is gone: retry until it stops.
         final Path file = thread.getFile();
-        Files.deleteIfExists(file);
-        Files.createDirectory(file);
-        thread.join(TIMEOUT_MS);
+        final long deadline = System.currentTimeMillis() + TIMEOUT_MS;
+        while (thread.isAlive() && System.currentTimeMillis() < deadline) {
+            try {
+                Files.deleteIfExists(file);
+                Files.createDirectory(file);
+            } catch (java.nio.file.FileAlreadyExistsException | java.nio.file.NoSuchFileException retry) {
+                // the worker raced us, try again
+            }
+            thread.join(10L);
+        }
 
         assertFalse(thread.isAlive(), "the worker must stop on its own after an I/O failure");
         assertNotNull(thread.getFailure());

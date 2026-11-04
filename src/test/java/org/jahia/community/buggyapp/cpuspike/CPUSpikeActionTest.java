@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 class CPUSpikeActionTest {
 
-    private static final String THREAD_PREFIX = "buggy-app-cpu-spike-";
     private static final long TIMEOUT_MS = 5_000L;
 
     @Test
@@ -70,8 +69,8 @@ class CPUSpikeActionTest {
     private static Set<String> spikerThreads() {
         return Thread.getAllStackTraces().keySet().stream()
                 .filter(Thread::isAlive)
+                .filter(CPUSpikerThread.class::isInstance)
                 .map(Thread::getName)
-                .filter(name -> name.startsWith(THREAD_PREFIX))
                 .collect(Collectors.toSet());
     }
 

@@ -22,8 +22,7 @@ public class ThreadLeakThread extends Thread {
     private CloseableHttpAsyncClient asyncHttpClient;
     private boolean closed;
 
-    public ThreadLeakThread(String name) {
-        super(name);
+    public ThreadLeakThread() {
         try {
             connectionManager = new PoolingNHttpClientConnectionManager(new DefaultConnectingIOReactor());
         } catch (IOReactorException ex) {

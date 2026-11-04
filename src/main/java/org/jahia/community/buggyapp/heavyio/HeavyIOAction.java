@@ -26,8 +26,8 @@ public class HeavyIOAction extends AbstractBuggyAction {
         requirePositive(duration, "duration");
         requirePositive(numberOfThreads, "number of threads");
         final List<HeavyIOThread> threads = new ArrayList<>(numberOfThreads);
-        for (int i = 1; i <= numberOfThreads; i++) {
-            threads.add(new HeavyIOThread("buggy-app-heavy-io-" + i));
+        for (int i = 0; i < numberOfThreads; i++) {
+            threads.add(new HeavyIOThread());
         }
         LOGGER.info("Heavy IO activity beginning!");
         runFor(duration, threads);

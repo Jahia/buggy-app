@@ -45,7 +45,7 @@ class ThreadLeakActionTest {
     @Test
     void closingBeforeTheThreadRunsDoesNotStartAnyClient() throws InterruptedException {
         final Set<Long> before = liveThreadIds();
-        final ThreadLeakThread thread = new ThreadLeakThread("buggy-app-thread-leak-test");
+        final ThreadLeakThread thread = new ThreadLeakThread();
 
         thread.close();
         thread.start();

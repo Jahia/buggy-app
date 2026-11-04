@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
 import java.util.Set;
@@ -25,13 +24,6 @@ class DeadLockActionTest {
     }
 
     @Test
-    void deadlockedThreadsHaveRecognisableNames() {
-        // Named threads make the "Found one Java-level deadlock" section of a thread dump easy to read
-        assertEquals("buggy-app-deadlock-A", new ThreadA().getName());
-        assertEquals("buggy-app-deadlock-B", new ThreadB().getName());
-    }
-
-    @Test
     void producesADeadlockTheJvmCanDetect() throws Exception {
         // Leaves two permanently blocked threads in the (forked) test JVM: that is the scenario
         final ThreadMXBean threads = ManagementFactory.getThreadMXBean();
@@ -45,8 +37,10 @@ class DeadLockActionTest {
         }
 
         assertNotNull(deadlocked, "no deadlock detected");
-        final Set<String> names = Arrays.stream(threads.getThreadInfo(deadlocked))
-                .map(ThreadInfo::getThreadName).collect(Collectors.toSet());
-        assertTrue(names.containsAll(Set.of("buggy-app-deadlock-A", "buggy-app-deadlock-B")), names::toString);
+        final Set<Long> deadlockedIds = Arrays.stream(deadlocked).boxed().collect(Collectors.toSet());
+        final Set<Class<?>> deadlockedTypes = Thread.getAllStackTraces().keySet().stream()
+                .filter(t -> deadlockedIds.contains(t.getId()))
+                .map(Object::getClass).collect(Collectors.toSet());
+        assertTrue(deadlockedTypes.containsAll(Set.of(ThreadA.class, ThreadB.class)), deadlockedTypes::toString);
     }
 }

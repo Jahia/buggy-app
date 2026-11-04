@@ -2,7 +2,6 @@ package org.jahia.community.buggyapp.common;
 
 import java.util.List;
 import org.apache.karaf.shell.api.action.Action;
-import org.apache.karaf.shell.api.action.Option;
 import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,27 +10,22 @@ import org.slf4j.LoggerFactory;
  * Base class of every buggy-app command.
  *
  * <ul>
- * <li>Refuses to run when Jahia is in production mode unless {@code --force} is given, so the fault injectors
- * cannot be triggered by mistake on a real environment.</li>
+ * <li>Logs a warning when a fault is injected on a Jahia running in production mode. It does not refuse: the
+ * training environment on Jahia Cloud runs in production mode and the exercise commands must work as written.</li>
  * <li>Provides {@link #runFor(long, List)}, which always stops the workers, even when the command is interrupted
  * (Ctrl-C or closed SSH session in the Karaf shell).</li>
  * </ul>
  */
 public abstract class AbstractBuggyAction implements Action {
 
-    static final String PRODUCTION_REFUSAL = "Jahia is running in production mode: refusing to inject a fault."
-            + " Re-run the command with --force if this really is a training environment.";
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBuggyAction.class);
     private static final long JOIN_TIMEOUT_MS = 5_000L;
 
-    @Option(name = "-f", aliases = "--force", description = "Run even when Jahia is in production mode")
-    private boolean force = false;
-
     @Override
     public final Object execute() throws Exception {
-        if (!force && isProductionMode()) {
-            LOGGER.warn(PRODUCTION_REFUSAL);
-            return PRODUCTION_REFUSAL;
+        if (isProductionMode()) {
+            LOGGER.warn("buggy-app: injecting fault '{}' on a Jahia running in production mode",
+                    getClass().getSimpleName());
         }
         return doExecute();
     }
@@ -41,10 +35,6 @@ public abstract class AbstractBuggyAction implements Action {
     protected boolean isProductionMode() {
         final SettingsBean settings = SettingsBean.getInstance();
         return settings != null && settings.isProductionMode();
-    }
-
-    void setForce(boolean force) {
-        this.force = force;
     }
 
     /**

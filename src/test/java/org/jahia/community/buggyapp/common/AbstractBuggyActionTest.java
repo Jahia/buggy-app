@@ -38,10 +38,6 @@ class AbstractBuggyActionTest {
     /** Busy worker that only stops through {@link StoppableThread#doStop()}. */
     private static final class SpinningWorker extends StoppableThread {
 
-        SpinningWorker(String name) {
-            super(name);
-        }
-
         @Override
         public void run() {
             while (keepRunning()) {
@@ -51,19 +47,9 @@ class AbstractBuggyActionTest {
     }
 
     @Test
-    void refusesToRunInProductionModeWithoutForce() throws Exception {
+    void stillRunsInProductionModeBecauseTheTrainingEnvironmentIsInProductionMode() throws Exception {
+        // Jahia Cloud training environment runs in production mode: commands must work as documented
         final RecordingAction action = new RecordingAction(true);
-
-        final Object result = action.execute();
-
-        assertFalse(action.executed.get());
-        assertTrue(String.valueOf(result).contains("--force"));
-    }
-
-    @Test
-    void runsInProductionModeWhenForced() throws Exception {
-        final RecordingAction action = new RecordingAction(true);
-        action.setForce(true);
 
         assertEquals("done", action.execute());
         assertTrue(action.executed.get());
@@ -98,7 +84,7 @@ class AbstractBuggyActionTest {
 
     @Test
     void runForStopsWorkersAfterDuration() throws InterruptedException {
-        final List<SpinningWorker> workers = List.of(new SpinningWorker("w1"), new SpinningWorker("w2"));
+        final List<SpinningWorker> workers = List.of(new SpinningWorker(), new SpinningWorker());
 
         AbstractBuggyAction.runFor(50L, workers);
 
@@ -111,7 +97,7 @@ class AbstractBuggyActionTest {
     @Test
     void runForStopsWorkersWhenTheShellThreadIsInterrupted() throws InterruptedException {
         // Arrange: a long run, as when a trainee presses Ctrl-C in the Karaf shell
-        final List<SpinningWorker> workers = List.of(new SpinningWorker("w1"), new SpinningWorker("w2"));
+        final List<SpinningWorker> workers = List.of(new SpinningWorker(), new SpinningWorker());
         final AtomicBoolean interrupted = new AtomicBoolean();
         final Thread shell = new Thread(() -> {
             try {

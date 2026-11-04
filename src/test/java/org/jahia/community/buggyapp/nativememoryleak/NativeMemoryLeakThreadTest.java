@@ -2,8 +2,11 @@ package org.jahia.community.buggyapp.nativememoryleak;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 
 class NativeMemoryLeakThreadTest {
@@ -26,7 +29,7 @@ class NativeMemoryLeakThreadTest {
     }
 
     @Test
-    void growsToTotalSizeThenFreesEverything() throws InterruptedException {
+    void mapsUpToTotalSizeThenUnmapsAndDeletesTheFile() throws InterruptedException {
         // Arrange
         final NativeMemoryLeakThread thread = new NativeMemoryLeakThread(30L, ONE_MB, 3 * ONE_MB);
 
@@ -37,12 +40,18 @@ class NativeMemoryLeakThreadTest {
         // Assert
         assertFalse(thread.isAlive(), "leak thread should finish on its own");
         assertEquals(3 * ONE_MB, thread.getPeakAllocatedBytes());
-        assertEquals(0L, thread.getAllocatedBytes(), "all native memory must be released at the end");
+        assertEquals(0L, thread.getAllocatedBytes(), "all mappings must be released at the end");
+        assertNotNull(thread.getFile());
+        assertFalse(Files.exists(thread.getFile()), "the mapped file must be deleted at the end");
     }
 
     @Test
-    void unsafeMemoryAllocatesAndFrees() {
-        final long address = UnsafeMemory.allocateAndTouch(ONE_MB);
-        UnsafeMemory.free(address);
+    void cleanerRejectsHeapBuffers() {
+        assertThrows(IllegalArgumentException.class, () -> DirectBufferCleaner.clean(ByteBuffer.allocate(16)));
+    }
+
+    @Test
+    void cleanerFreesDirectBuffers() {
+        DirectBufferCleaner.clean(ByteBuffer.allocateDirect(1024));
     }
 }

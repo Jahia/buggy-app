@@ -21,10 +21,6 @@ public class HeavyIOThread extends StoppableThread {
     private volatile Path file;
     private volatile IOException failure;
 
-    public HeavyIOThread(String name) {
-        super(name);
-    }
-
     @Override
     public void run() {
         try {

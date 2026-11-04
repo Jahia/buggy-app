@@ -25,8 +25,8 @@ public class ThreadLeakAction extends AbstractBuggyAction {
         LOGGER.info("Beginning of the leak");
         final List<ThreadLeakThread> threads = new ArrayList<>(NB_LOOPS);
         try {
-            for (int i = 1; i <= NB_LOOPS; i++) {
-                final ThreadLeakThread thread = new ThreadLeakThread("buggy-app-thread-leak-" + i);
+            for (int i = 0; i < NB_LOOPS; i++) {
+                final ThreadLeakThread thread = new ThreadLeakThread();
                 threads.add(thread);
                 thread.start();
                 Thread.sleep(duration / NB_LOOPS);

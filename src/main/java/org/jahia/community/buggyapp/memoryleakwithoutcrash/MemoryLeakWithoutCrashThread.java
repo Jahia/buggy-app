@@ -25,7 +25,6 @@ public class MemoryLeakWithoutCrashThread extends StoppableThread {
     private final long pauseBetweenBatches;
 
     public MemoryLeakWithoutCrashThread(long duration) {
-        super("buggy-app-memory-leak-without-crash");
         this.pauseBetweenBatches = batchPause(duration, Runtime.getRuntime().maxMemory());
     }
 
