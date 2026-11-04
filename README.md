@@ -43,6 +43,7 @@ scenario cleanly**.
 | `buggy-app:native-memory-leak` | `-d` (60000), `-s` step (60 MB), `-t` total (500 MB), `--stop` | Memory-maps and loads a temp file in `-s` steps up to `-t` over the duration, then unmaps it and deletes the file. One leak at a time; `--stop` ends it early | no (background) | yes |
 | `buggy-app:thread-leak` | `-d` (60000) | Starts 50 async HTTP clients, each with its own `I/O dispatcher` threads (one per core) | yes | yes |
 | `buggy-app:dead-lock` | — | Two threads lock two class monitors in opposite order | no | **no — restart Jahia** |
+| `buggy-app:blocked-app` | `-d` (60000), `-n` threads (10) | One thread holds a lock for the whole duration; the `n-1` others are `BLOCKED` waiting for it | yes | yes |
 
 Worker threads intentionally keep the JVM default names (`Thread-N`): the exercise asks trainees to find the culprit
 from `top -H` / `iotop` and match the native thread id in a thread dump.
