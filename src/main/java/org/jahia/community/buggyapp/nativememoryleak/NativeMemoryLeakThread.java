@@ -1,92 +1,71 @@
 package org.jahia.community.buggyapp.nativememoryleak;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.internal.ref.Cleaner;
-import org.jahia.community.buggyapp.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.nio.ch.DirectBuffer;
 
+/**
+ * Grows the process native (off-heap) memory by {@code size} bytes at regular intervals until {@code totalSize}
+ * is reached over {@code duration} ms, then releases everything.
+ */
 public class NativeMemoryLeakThread extends Thread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NativeMemoryLeakThread.class);
-    private final long duration;
+    private static final long ONE_MB = 1024L * 1024L;
     private final long size;
     private final long totalSize;
-    private boolean doStop = false;
+    private final long pauseBetweenSteps;
+    private volatile long allocatedBytes;
+    private volatile long peakAllocatedBytes;
 
     public NativeMemoryLeakThread(long duration, long size, long totalSize) {
-        this.duration = duration;
+        super("buggy-app-native-memory-leak");
+        if (duration < 0) {
+            throw new IllegalArgumentException("duration must be >= 0, got " + duration);
+        }
+        if (size <= 0) {
+            throw new IllegalArgumentException("size must be > 0, got " + size);
+        }
+        if (totalSize < size) {
+            throw new IllegalArgumentException(String.format("total size (%s) must be >= size (%s)", totalSize, size));
+        }
         this.size = size;
         this.totalSize = totalSize;
+        this.pauseBetweenSteps = duration / (totalSize / size);
     }
 
     @Override
     public void run() {
         LOGGER.info("Beginning of the leak");
+        final List<Long> addresses = new ArrayList<>();
         try {
-            long currentSize = 0;
-            final File file = createFile(FileUtil.TMP_DIR + File.separator + "native_memory_leak.bin", size);
-            final Path path = Paths.get(file.getPath());
-            final List<MappedByteBuffer> mappedByteBuffers = new ArrayList<>();
-            while (currentSize < totalSize) {
-                try ( FileChannel fileChannel = (FileChannel) Files.newByteChannel(path, StandardOpenOption.READ)) {
-                    final MappedByteBuffer mappedByteBuffer = fileChannel.map(
-                            FileChannel.MapMode.READ_ONLY,
-                            0,
-                            fileChannel.size());
-                    mappedByteBuffers.add(mappedByteBuffer);
-                    mappedByteBuffer.load();
-                    currentSize += size;
-                    Thread.sleep(duration / (totalSize / size));
-                } catch (IOException | InterruptedException ex) {
-                    LOGGER.error(ex.getMessage(), ex);
-                }
+            while (allocatedBytes + size <= totalSize) {
+                addresses.add(UnsafeMemory.allocateAndTouch(size));
+                allocatedBytes += size;
+                peakAllocatedBytes = allocatedBytes;
+                LOGGER.info("{} MB of native memory allocated", allocatedBytes / ONE_MB);
+                Thread.sleep(pauseBetweenSteps);
             }
-
-            Files.delete(path);
-            for (MappedByteBuffer mappedByteBuffer : mappedByteBuffers) {
-                invokeCleaner(mappedByteBuffer);
+        } catch (InterruptedException ex) {
+            LOGGER.warn("Native memory leak interrupted, releasing memory");
+            Thread.currentThread().interrupt();
+        } catch (OutOfMemoryError ex) {
+            LOGGER.error("Native allocation failed after {} MB", allocatedBytes / ONE_MB, ex);
+        } finally {
+            for (long address : addresses) {
+                UnsafeMemory.free(address);
+                allocatedBytes -= size;
             }
-        } catch (IOException ex) {
-            LOGGER.error(ex.getMessage(), ex);
         }
         LOGGER.info("End of the leak");
     }
 
-    private void invokeCleaner(ByteBuffer directBuffer) {
-        if (!directBuffer.isDirect()) {
-            throw new IllegalArgumentException("buffer is non-direct");
-        }
-
-        final DirectBuffer db = (DirectBuffer) directBuffer;
-        if (db.attachment() != null) {
-            throw new IllegalArgumentException("duplicate or slice");
-        }
-
-        final Cleaner cleaner = db.cleaner();
-        if (cleaner != null) {
-            cleaner.clean();
-        }
+    public long getAllocatedBytes() {
+        return allocatedBytes;
     }
 
-    private File createFile(final String filename, final long sizeInBytes) throws IOException {
-        final File file = new File(filename);
-        file.createNewFile();
-        try ( RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
-            raf.setLength(sizeInBytes);
-        }
-        return file;
+    public long getPeakAllocatedBytes() {
+        return peakAllocatedBytes;
     }
 }
