@@ -34,7 +34,7 @@ class BackgroundScenarioTest {
     }
 
     @Test
-    void stoppingTheModuleStopsEveryRunningBackgroundScenario() throws InterruptedException {
+    void stoppingTheModuleStopsEveryRunningBackgroundScenario() {
         // Arrange: two different background scenarios running
         final BackgroundScenario noise = new BackgroundScenario("noise", "Noise stopped");
         final BackgroundScenario leak = new BackgroundScenario("leak", "Leak stopped");

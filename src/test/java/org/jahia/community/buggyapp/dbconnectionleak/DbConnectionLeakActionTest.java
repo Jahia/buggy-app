@@ -1,5 +1,7 @@
 package org.jahia.community.buggyapp.dbconnectionleak;
 
+import static org.jahia.community.buggyapp.TestWaits.letRun;
+import static org.jahia.community.buggyapp.TestWaits.waitFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -9,7 +11,6 @@ import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BooleanSupplier;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +68,7 @@ class DbConnectionLeakActionTest {
 
         // Act
         thread.start();
-        Thread.sleep(600L);
+        letRun(600L);
         thread.doStop();
         thread.join(TIMEOUT_MS);
 
@@ -85,7 +86,7 @@ class DbConnectionLeakActionTest {
         final DbConnectionLeakThread thread = new DbConnectionLeakThread(pool, 3, 100L);
         thread.start();
         waitFor(() -> pool.getActive() == 1);
-        Thread.sleep(100L);
+        letRun(100L);
 
         // Act
         thread.doStop();
@@ -102,15 +103,20 @@ class DbConnectionLeakActionTest {
         final DataSource opaque = (DataSource) Proxy.newProxyInstance(getClass().getClassLoader(),
                 new Class<?>[]{DataSource.class}, (proxy, method, args) -> null);
 
-        assertThrows(IllegalArgumentException.class, () -> actionOn(opaque, 1_000L, 0).execute());
+        final DbConnectionLeakAction action = actionOn(opaque, 1_000L, 0);
+
+        assertThrows(IllegalArgumentException.class, action::execute);
     }
 
     @Test
     void rejectsInvalidOptions() {
         final StubPool pool = new StubPool(2, 10L);
 
-        assertThrows(IllegalArgumentException.class, () -> actionOn(pool, 0L, 1).execute());
-        assertThrows(IllegalArgumentException.class, () -> actionOn(pool, 1_000L, -1).execute());
+        final DbConnectionLeakAction zeroDuration = actionOn(pool, 0L, 1);
+        final DbConnectionLeakAction negativeTarget = actionOn(pool, 1_000L, -1);
+
+        assertThrows(IllegalArgumentException.class, zeroDuration::execute);
+        assertThrows(IllegalArgumentException.class, negativeTarget::execute);
     }
 
     @Test
@@ -151,10 +157,4 @@ class DbConnectionLeakActionTest {
         return shell;
     }
 
-    private static void waitFor(BooleanSupplier condition) throws InterruptedException {
-        final long deadline = System.currentTimeMillis() + TIMEOUT_MS;
-        while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(10L);
-        }
-    }
 }

@@ -1,5 +1,6 @@
 package org.jahia.community.buggyapp.memoryleakwithoutcrash;
 
+import static org.jahia.community.buggyapp.TestWaits.letRun;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,7 +46,7 @@ class MemoryLeakWithoutCrashThreadTest {
         final MemoryLeakWithoutCrashThread thread = new MemoryLeakWithoutCrashThread(60_000L);
 
         thread.start();
-        Thread.sleep(100L);
+        letRun(100L);
         thread.doStop();
         thread.join(5_000L);
 

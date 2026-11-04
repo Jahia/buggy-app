@@ -1,5 +1,6 @@
 package org.jahia.community.buggyapp.common;
 
+import static org.jahia.community.buggyapp.TestWaits.waitFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -121,10 +122,7 @@ class AbstractBuggyActionTest {
         }
     }
 
-    private static void waitUntilAllAlive(List<? extends Thread> threads) throws InterruptedException {
-        final long deadline = System.currentTimeMillis() + JOIN_TIMEOUT_MS;
-        while (!threads.stream().allMatch(Thread::isAlive) && System.currentTimeMillis() < deadline) {
-            Thread.sleep(5L);
-        }
+    private static void waitUntilAllAlive(List<? extends Thread> threads) {
+        waitFor(() -> threads.stream().allMatch(Thread::isAlive));
     }
 }

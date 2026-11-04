@@ -1,5 +1,6 @@
 package org.jahia.community.buggyapp.blockedapp;
 
+import static org.jahia.community.buggyapp.TestWaits.waitFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -11,7 +12,6 @@ import java.lang.management.ThreadMXBean;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -95,10 +95,4 @@ class BlockedAppActionTest {
                 .collect(Collectors.toList());
     }
 
-    private static void waitFor(BooleanSupplier condition) throws InterruptedException {
-        final long deadline = System.currentTimeMillis() + TIMEOUT_MS;
-        while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(20L);
-        }
-    }
 }

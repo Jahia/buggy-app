@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
 import org.jahia.community.buggyapp.common.StoppableThread;
 import org.slf4j.Logger;
@@ -24,7 +25,7 @@ public class DbConnectionLeakThread extends StoppableThread {
     private final long pauseBetweenBorrows;
     /** Leaked connections; guarded by itself. */
     private final List<Connection> leaked = new ArrayList<>();
-    private volatile int failedBorrows;
+    private final AtomicInteger failedBorrows = new AtomicInteger();
 
     public DbConnectionLeakThread(DataSource dataSource, int target, long duration) {
         if (target <= 0) {
@@ -69,7 +70,7 @@ public class DbConnectionLeakThread extends StoppableThread {
         try {
             connection = dataSource.getConnection();
         } catch (SQLException ex) {
-            failedBorrows++;
+            failedBorrows.incrementAndGet();
             LOGGER.warn("Cannot borrow a connection with {} already leaked: {}", leakedCount(), ex.getMessage());
             return;
         }
@@ -82,6 +83,9 @@ public class DbConnectionLeakThread extends StoppableThread {
             connection.getMetaData();
         } catch (SQLException ex) {
             LOGGER.debug("Cannot read the metadata of a leaked connection", ex);
+        }
+        if (!LOGGER.isInfoEnabled()) {
+            return;
         }
         final int count = leakedCount();
         LOGGER.info("Leaked {} of {} connections (pool: {} active / {} max)", count, target,
@@ -129,6 +133,6 @@ public class DbConnectionLeakThread extends StoppableThread {
     }
 
     int getFailedBorrows() {
-        return failedBorrows;
+        return failedBorrows.get();
     }
 }

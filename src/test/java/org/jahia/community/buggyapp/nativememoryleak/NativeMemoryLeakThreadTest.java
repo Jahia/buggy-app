@@ -1,5 +1,6 @@
 package org.jahia.community.buggyapp.nativememoryleak;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,11 +48,15 @@ class NativeMemoryLeakThreadTest {
 
     @Test
     void cleanerRejectsHeapBuffers() {
-        assertThrows(IllegalArgumentException.class, () -> DirectBufferCleaner.clean(ByteBuffer.allocate(16)));
+        final ByteBuffer heapBuffer = ByteBuffer.allocate(16);
+
+        assertThrows(IllegalArgumentException.class, () -> DirectBufferCleaner.clean(heapBuffer));
     }
 
     @Test
     void cleanerFreesDirectBuffers() {
-        DirectBufferCleaner.clean(ByteBuffer.allocateDirect(1024));
+        final ByteBuffer directBuffer = ByteBuffer.allocateDirect(1024);
+
+        assertDoesNotThrow(() -> DirectBufferCleaner.clean(directBuffer));
     }
 }

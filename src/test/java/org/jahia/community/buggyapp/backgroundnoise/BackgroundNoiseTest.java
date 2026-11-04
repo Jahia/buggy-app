@@ -1,11 +1,11 @@
 package org.jahia.community.buggyapp.backgroundnoise;
 
+import static org.jahia.community.buggyapp.TestWaits.waitFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -90,10 +90,4 @@ class BackgroundNoiseTest {
                 .filter(t -> t instanceof NoiseProducer || t instanceof NoiseConsumer);
     }
 
-    private static void waitFor(BooleanSupplier condition) throws InterruptedException {
-        final long deadline = System.currentTimeMillis() + TIMEOUT_MS;
-        while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(10L);
-        }
-    }
 }

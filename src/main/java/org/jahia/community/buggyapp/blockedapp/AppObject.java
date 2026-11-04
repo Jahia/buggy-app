@@ -15,7 +15,8 @@ public class AppObject {
     public synchronized void getSomething() {
         while (holding) {
             try {
-                Thread.sleep(HOLD_STEP_MS);
+                // Deliberate: the scenario must keep the monitor while idle; wait() would release it
+                Thread.sleep(HOLD_STEP_MS); // NOSONAR java:S2276 intentional fault
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
                 return;
