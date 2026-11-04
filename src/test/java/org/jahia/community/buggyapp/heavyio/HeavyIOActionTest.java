@@ -1,0 +1,61 @@
+package org.jahia.community.buggyapp.heavyio;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.junit.jupiter.api.Test;
+
+class HeavyIOActionTest {
+
+    private static final long TIMEOUT_MS = 5_000L;
+
+    @Test
+    void workerWritesToItsOwnFileAndDeletesItWhenStopped() throws InterruptedException {
+        // Arrange
+        final HeavyIOThread first = new HeavyIOThread("buggy-app-heavy-io-1");
+        final HeavyIOThread second = new HeavyIOThread("buggy-app-heavy-io-2");
+
+        // Act
+        first.start();
+        second.start();
+        waitForFile(first);
+        waitForFile(second);
+        final Path firstFile = first.getFile();
+        final Path secondFile = second.getFile();
+        assertTrue(Files.exists(firstFile), "file should exist while the worker runs");
+        first.doStop();
+        second.doStop();
+        first.join(TIMEOUT_MS);
+        second.join(TIMEOUT_MS);
+
+        // Assert
+        assertNotEquals(firstFile, secondFile, "concurrent workers must not share a file");
+        assertFalse(Files.exists(firstFile), "file must be deleted when the worker stops");
+        assertFalse(Files.exists(secondFile), "file must be deleted when the worker stops");
+    }
+
+    @Test
+    void actionRunsForTheDurationAndRejectsBadOptions() throws Exception {
+        final HeavyIOAction action = new HeavyIOAction();
+        action.duration = 50L;
+        action.numberOfThreads = 1;
+        assertEquals(null, action.execute());
+
+        action.numberOfThreads = 0;
+        assertThrows(IllegalArgumentException.class, action::execute);
+    }
+
+    private static void waitForFile(HeavyIOThread thread) throws InterruptedException {
+        final long deadline = System.currentTimeMillis() + TIMEOUT_MS;
+        while (thread.getFile() == null && System.currentTimeMillis() < deadline) {
+            Thread.sleep(5L);
+        }
+        assertNotNull(thread.getFile());
+    }
+}
