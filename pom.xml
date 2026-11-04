@@ -76,7 +76,9 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Karaf-Commands>*</Karaf-Commands>
+                        <!-- Only our packages: '*' made Karaf also scan the embedded jars, and fail on the
+                             multi-release module-info.class of commons-codec at every deployment -->
+                        <Karaf-Commands>org.jahia.community.buggyapp.*</Karaf-Commands>
                         <_dsannotations>*</_dsannotations>
                     </instructions>
                 </configuration>
