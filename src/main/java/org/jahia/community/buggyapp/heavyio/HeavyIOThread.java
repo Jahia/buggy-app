@@ -19,6 +19,7 @@ public class HeavyIOThread extends StoppableThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(HeavyIOThread.class);
     private static final int LOG_EVERY = 1000;
     private volatile Path file;
+    private volatile IOException failure;
 
     public HeavyIOThread(String name) {
         super(name);
@@ -39,7 +40,9 @@ public class HeavyIOThread extends StoppableThread {
                 }
             }
         } catch (IOException ex) {
-            LOGGER.error("Cannot create the heavy I/O temporary file", ex);
+            // Stop at the first failure (disk full, file removed...) instead of flooding the log in a tight loop
+            failure = ex;
+            LOGGER.error("Heavy I/O worker {} stopped on I/O failure", getName(), ex);
         } finally {
             FileUtil.deleteQuietly(file);
         }
@@ -47,5 +50,9 @@ public class HeavyIOThread extends StoppableThread {
 
     public Path getFile() {
         return file;
+    }
+
+    public IOException getFailure() {
+        return failure;
     }
 }

@@ -31,11 +31,11 @@ Blocking commands keep the shell busy for the whole duration. Pressing **Ctrl-C 
 | Command | Options (default) | What it does | Blocking | Recovers on its own |
 |---|---|---|---|---|
 | `buggy-app:cpu-spike` | `-d` (60000), `-n` threads (1) | Busy loops in `n` threads named `buggy-app-cpu-spike-*` | yes | yes |
-| `buggy-app:heavy-io` | `-d` (60000), `-n` threads (1) | Each thread writes and reads its own temp file in a loop; files are deleted at the end | yes | yes |
-| `buggy-app:memory-leak` | — | Fills a map on the shell thread until `OutOfMemoryError` | until OOM | the map becomes collectable after the OOM |
+| `buggy-app:heavy-io` | `-d` (60000), `-n` threads (1) | Each thread writes and reads its own temp file in a loop; files are deleted at the end; a worker stops at its first I/O error | yes | yes |
+| `buggy-app:memory-leak` | — | Fills a map on the shell thread until `OutOfMemoryError` (or Ctrl-C) | until OOM | the map becomes collectable after the OOM |
 | `buggy-app:memory-leak-without-crash` | `-d` (60000) | Fills the heap up to ~99 % of `-Xmx` over the duration, holds it, then releases it | yes | yes |
 | `buggy-app:metaspace-leak` | `-d` (60000) | Generates new classes with Javassist | yes | metaspace is released on module restart/refresh |
-| `buggy-app:native-memory-leak` | `-d` (60000), `-s` step (60 MB), `-t` total (500 MB) | Allocates off-heap memory in `-s` steps up to `-t` over the duration, then frees it | no (background) | yes |
+| `buggy-app:native-memory-leak` | `-d` (60000), `-s` step (60 MB), `-t` total (500 MB), `--stop` | Allocates off-heap memory in `-s` steps up to `-t` over the duration, then frees it. One leak at a time; `--stop` ends it early | no (background) | yes |
 | `buggy-app:thread-leak` | `-d` (60000) | Starts 50 async HTTP clients, each with its own I/O dispatcher threads (one per core) | yes | yes |
 | `buggy-app:dead-lock` | — | Two threads (`buggy-app-deadlock-A/B`) lock two monitors in opposite order | no | **no — restart Jahia** |
 

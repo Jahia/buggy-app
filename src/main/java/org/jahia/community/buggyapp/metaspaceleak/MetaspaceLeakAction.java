@@ -24,6 +24,9 @@ public class MetaspaceLeakAction extends AbstractBuggyAction {
         LOGGER.info("Beginning of the leak");
         runFor(duration, List.of(thread));
         LOGGER.info("End of the leak: {} classes created", thread.getClassesCreated());
+        if (thread.getFailure() != null) {
+            return "Metaspace leak failed after " + thread.getClassesCreated() + " classes: " + thread.getFailure();
+        }
         return null;
     }
 }

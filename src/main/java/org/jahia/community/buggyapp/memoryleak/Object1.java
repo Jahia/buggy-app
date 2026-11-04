@@ -14,7 +14,8 @@ public class Object1 {
 
     public void grow() {
         long counter = 0;
-        while (true) {
+        // Stops on Ctrl-C (interruption of the shell thread); otherwise grows until OutOfMemoryError
+        while (!Thread.currentThread().isInterrupted()) {
             myMap.put("key" + counter, PAYLOAD + counter);
             ++counter;
             if (counter % RECORDS_PER_LOG == 0) {

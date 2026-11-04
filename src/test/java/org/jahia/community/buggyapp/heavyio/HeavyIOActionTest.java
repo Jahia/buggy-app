@@ -58,4 +58,21 @@ class HeavyIOActionTest {
         }
         assertNotNull(thread.getFile());
     }
+
+    @Test
+    void workerStopsOnFirstIoFailureInsteadOfFloodingTheLog() throws Exception {
+        final HeavyIOThread thread = new HeavyIOThread("buggy-app-heavy-io-failing");
+        thread.start();
+        waitForFile(thread);
+
+        // Replace the file with a directory: every write now fails
+        final Path file = thread.getFile();
+        Files.deleteIfExists(file);
+        Files.createDirectory(file);
+        thread.join(TIMEOUT_MS);
+
+        assertFalse(thread.isAlive(), "the worker must stop on its own after an I/O failure");
+        assertNotNull(thread.getFailure());
+        Files.deleteIfExists(file);
+    }
 }

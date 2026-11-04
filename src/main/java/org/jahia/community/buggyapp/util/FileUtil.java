@@ -15,20 +15,14 @@ public final class FileUtil {
     private FileUtil() {
     }
 
-    public static void write(Path file, String content) {
-        try {
-            Files.write(file, content.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException ex) {
-            LOGGER.error("Failed to write to {}", file, ex);
-        }
+    public static void write(Path file, String content) throws IOException {
+        Files.write(file, content.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static String read(Path file) {
+    public static String read(Path file) throws IOException {
         final StringBuilder contentBuilder = new StringBuilder();
         try (Stream<String> stream = Files.lines(file, StandardCharsets.UTF_8)) {
             stream.forEach(line -> contentBuilder.append(line).append('\n'));
-        } catch (IOException ex) {
-            LOGGER.error("Failed to read {}", file, ex);
         }
         return contentBuilder.toString();
     }

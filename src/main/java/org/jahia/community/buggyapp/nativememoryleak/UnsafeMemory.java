@@ -45,7 +45,12 @@ final class UnsafeMemory {
      */
     static long allocateAndTouch(long bytes) {
         final long address = (Long) invoke(ALLOCATE_MEMORY, bytes);
-        invoke(SET_MEMORY, address, bytes, FILL_BYTE);
+        try {
+            invoke(SET_MEMORY, address, bytes, FILL_BYTE);
+        } catch (RuntimeException | Error ex) {
+            free(address);
+            throw ex;
+        }
         return address;
     }
 

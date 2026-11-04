@@ -2,6 +2,7 @@ package org.jahia.community.buggyapp.nativememoryleak;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jahia.community.buggyapp.common.StoppableThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +10,7 @@ import org.slf4j.LoggerFactory;
  * Grows the process native (off-heap) memory by {@code size} bytes at regular intervals until {@code totalSize}
  * is reached over {@code duration} ms, then releases everything.
  */
-public class NativeMemoryLeakThread extends Thread {
+public class NativeMemoryLeakThread extends StoppableThread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NativeMemoryLeakThread.class);
     private static final long ONE_MB = 1024L * 1024L;
@@ -33,6 +34,15 @@ public class NativeMemoryLeakThread extends Thread {
         this.size = size;
         this.totalSize = totalSize;
         this.pauseBetweenSteps = duration / (totalSize / size);
+        // Runs in background: must never keep the JVM alive on shutdown
+        setDaemon(true);
+    }
+
+    @Override
+    public void doStop() {
+        super.doStop();
+        // Wake the thread up while it sleeps between two allocations
+        interrupt();
     }
 
     @Override
@@ -40,7 +50,7 @@ public class NativeMemoryLeakThread extends Thread {
         LOGGER.info("Beginning of the leak");
         final List<Long> addresses = new ArrayList<>();
         try {
-            while (allocatedBytes + size <= totalSize) {
+            while (keepRunning() && allocatedBytes + size <= totalSize) {
                 addresses.add(UnsafeMemory.allocateAndTouch(size));
                 allocatedBytes += size;
                 peakAllocatedBytes = allocatedBytes;
@@ -48,17 +58,26 @@ public class NativeMemoryLeakThread extends Thread {
                 Thread.sleep(pauseBetweenSteps);
             }
         } catch (InterruptedException ex) {
-            LOGGER.warn("Native memory leak interrupted, releasing memory");
+            LOGGER.info("Native memory leak stopped, releasing memory");
             Thread.currentThread().interrupt();
         } catch (OutOfMemoryError ex) {
             LOGGER.error("Native allocation failed after {} MB", allocatedBytes / ONE_MB, ex);
         } finally {
-            for (long address : addresses) {
-                UnsafeMemory.free(address);
-                allocatedBytes -= size;
-            }
+            releaseAll(addresses);
         }
         LOGGER.info("End of the leak");
+    }
+
+    private void releaseAll(List<Long> addresses) {
+        for (long address : addresses) {
+            try {
+                UnsafeMemory.free(address);
+                allocatedBytes -= size;
+            } catch (RuntimeException ex) {
+                // Keep releasing the other blocks
+                LOGGER.error("Failed to free native block at {}", address, ex);
+            }
+        }
     }
 
     public long getAllocatedBytes() {
