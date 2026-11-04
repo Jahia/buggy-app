@@ -34,6 +34,24 @@ class BackgroundScenarioTest {
     }
 
     @Test
+    void stoppingTheModuleStopsEveryRunningBackgroundScenario() throws InterruptedException {
+        // Arrange: two different background scenarios running
+        final BackgroundScenario noise = new BackgroundScenario("noise", "Noise stopped");
+        final BackgroundScenario leak = new BackgroundScenario("leak", "Leak stopped");
+        final Idle noiseThread = new Idle();
+        final Idle leakThread = new Idle();
+        noise.start(noiseThread);
+        leak.start(leakThread);
+
+        // Act: what OSGi calls when the bundle is stopped or redeployed
+        new BackgroundScenarioCleaner().deactivate();
+
+        // Assert: otherwise they would survive the redeploy, out of reach of --stop
+        assertFalse(noiseThread.isAlive());
+        assertFalse(leakThread.isAlive());
+    }
+
+    @Test
     void canStartAgainOnceThePreviousRunIsOver() throws InterruptedException {
         final BackgroundScenario scenario = new BackgroundScenario("noise", "Noise stopped");
         scenario.start(new Idle());

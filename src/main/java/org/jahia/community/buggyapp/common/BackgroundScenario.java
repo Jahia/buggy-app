@@ -1,6 +1,10 @@
 package org.jahia.community.buggyapp.common;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A scenario that runs in background (the command returns immediately), one instance at a time, and that can be
@@ -8,7 +12,10 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class BackgroundScenario {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BackgroundScenario.class);
     private static final long STOP_TIMEOUT_MS = 10_000L;
+    /** Every background scenario of this bundle, so that they can all be stopped with the module. */
+    private static final List<BackgroundScenario> ALL = new CopyOnWriteArrayList<>();
     private final AtomicReference<StoppableThread> running = new AtomicReference<>();
     private final String label;
     private final String stoppedMessage;
@@ -20,6 +27,20 @@ public final class BackgroundScenario {
     public BackgroundScenario(String label, String stoppedMessage) {
         this.label = label;
         this.stoppedMessage = stoppedMessage;
+        ALL.add(this);
+    }
+
+    /** Stops every running background scenario; called when the module is stopped. */
+    static void stopAll() {
+        for (BackgroundScenario scenario : ALL) {
+            try {
+                final String result = scenario.stop();
+                LOGGER.info("Module stopping: {}", result);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
     /** Starts {@code thread} unless an instance is already running. */
