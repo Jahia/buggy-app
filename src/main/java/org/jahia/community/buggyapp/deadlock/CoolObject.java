@@ -3,11 +3,7 @@ package org.jahia.community.buggyapp.deadlock;
 public class CoolObject {
 
     public static synchronized void method1() {
-        try {
-            // Sleep for 10 seconds
-            Thread.sleep(10 * 1000);
-        } catch (Exception e) {
-        }
+        LockHolder.holdLock();
         HotObject.method2();
     }
 }

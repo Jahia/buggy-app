@@ -1,60 +1,54 @@
 package org.jahia.community.buggyapp.heavyio;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.jahia.community.buggyapp.common.StoppableThread;
 import org.jahia.community.buggyapp.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HeavyIOThread extends Thread {
+/**
+ * Writes then reads back a small file in a tight loop until stopped. Each worker uses its own temporary file,
+ * deleted when the worker stops.
+ */
+public class HeavyIOThread extends StoppableThread {
 
+    public static final String CONTENT = "Hello World! We are building a simple chaos engineering product here. \n"
+            .repeat(17);
     private static final Logger LOGGER = LoggerFactory.getLogger(HeavyIOThread.class);
-    public static final String CONTENT
-            = "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n"
-            + "Hello World! We are building a simple chaos engineering product here. \n";
-    private boolean doStop = false;
-    public String fileName;
-
-    public HeavyIOThread(String fileName) {
-        this.fileName = fileName;
-    }
-
-    public synchronized void doStop() {
-        this.doStop = true;
-    }
-
-    private synchronized boolean keepRunning() {
-        return this.doStop == false;
-    }
+    private static final int LOG_EVERY = 1000;
+    private volatile Path file;
+    private volatile IOException failure;
 
     @Override
     public void run() {
-        int counter = 0;
-        // Loop infinitely trying to read and close the file.
-        while (keepRunning()) {
-            // Write the contents to the file.
-            FileUtil.write(fileName, CONTENT);
-
-            // Read the contents from the file.
-            FileUtil.read(fileName);
-
-            if (++counter == 1000) {
-                LOGGER.info("Read & write 1000 times to " + fileName);
-                counter = 0;
+        try {
+            file = Files.createTempFile("buggy-app-heavy-io-", ".txt");
+            LOGGER.info("Starting to write to {}", file);
+            int counter = 0;
+            while (keepRunning()) {
+                FileUtil.write(file, CONTENT);
+                FileUtil.read(file);
+                if (++counter == LOG_EVERY) {
+                    LOGGER.info("Read & write {} times to {}", LOG_EVERY, file);
+                    counter = 0;
+                }
             }
+        } catch (IOException ex) {
+            // Stop at the first failure (disk full, file removed...) instead of flooding the log in a tight loop
+            failure = ex;
+            LOGGER.error("Heavy I/O worker {} stopped on I/O failure", getName(), ex);
+        } finally {
+            FileUtil.deleteQuietly(file);
         }
+    }
+
+    public Path getFile() {
+        return file;
+    }
+
+    public IOException getFailure() {
+        return failure;
     }
 }

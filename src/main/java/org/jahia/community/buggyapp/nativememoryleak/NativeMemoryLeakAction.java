@@ -1,29 +1,37 @@
 package org.jahia.community.buggyapp.nativememoryleak;
 
-import org.apache.karaf.shell.api.action.Action;
 import org.apache.karaf.shell.api.action.Command;
 import org.apache.karaf.shell.api.action.Option;
 import org.apache.karaf.shell.api.action.lifecycle.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jahia.community.buggyapp.common.AbstractBuggyAction;
+import org.jahia.community.buggyapp.common.BackgroundScenario;
 
-@Command(scope = "buggy-app", name = "native-memory-leak", description = "Native memory leak")
+/**
+ * Starts the native memory leak in background. Only one leak runs at a time; {@code --stop} ends it early and
+ * releases the memory.
+ */
+@Command(scope = "buggy-app", name = "native-memory-leak", description = "Native memory leak (runs in background)")
 @Service
-public class NativeMemoryLeakAction implements Action {
+public class NativeMemoryLeakAction extends AbstractBuggyAction {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(NativeMemoryLeakAction.class);
-    @Option(name = "-d", aliases = "--duration", description = "Duration of the leak")
-    private long duration = 60000L;
+    private static final BackgroundScenario SCENARIO =
+            new BackgroundScenario("native memory leak", "Native memory leak stopped, memory released");
+
+    @Option(name = "-d", aliases = "--duration", description = "Duration of the leak in ms")
+    long duration = 60_000L;
     @Option(name = "-s", aliases = "--size", description = "Size in bytes for each leak increase")
-    private long size = 60 * 1024 * 1024;
+    long size = 60L * 1024L * 1024L;
     @Option(name = "-t", aliases = "--total-size", description = "Size in bytes for the total increase")
-    private long totalSize = 500 * 1024 * 1024;
+    long totalSize = 500L * 1024L * 1024L;
+    @Option(name = "--stop", description = "Stop the running leak and release its memory")
+    boolean stop = false;
 
     @Override
-    public Object execute() throws Exception {
-        final NativeMemoryLeakThread thread = new NativeMemoryLeakThread(duration, size, totalSize);
-        thread.start();
-        return null;
+    protected Object doExecute() throws InterruptedException {
+        if (stop) {
+            return SCENARIO.stop();
+        }
+        // Options are validated by the constructor, so bad input fails in the shell, not in the background
+        return SCENARIO.start(new NativeMemoryLeakThread(duration, size, totalSize));
     }
-
 }

@@ -1,16 +1,8 @@
 package org.jahia.community.buggyapp.cpuspike;
 
-public class CPUSpikerThread extends Thread {
+import org.jahia.community.buggyapp.common.StoppableThread;
 
-    private boolean doStop = false;
-
-    public synchronized void doStop() {
-        this.doStop = true;
-    }
-
-    private synchronized boolean keepRunning() {
-        return this.doStop == false;
-    }
+public class CPUSpikerThread extends StoppableThread {
 
     @Override
     public void run() {
@@ -20,5 +12,6 @@ public class CPUSpikerThread extends Thread {
     }
 
     public static void doSomething() {
+        // Intentionally empty: the busy loop itself is the CPU spike
     }
 }
