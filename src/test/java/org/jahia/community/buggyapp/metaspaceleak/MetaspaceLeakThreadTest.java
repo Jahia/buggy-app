@@ -1,5 +1,6 @@
 package org.jahia.community.buggyapp.metaspaceleak;
 
+import static org.jahia.community.buggyapp.TestWaits.letRun;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,7 +38,7 @@ class MetaspaceLeakThreadTest {
     private static MetaspaceLeakThread runOnce() throws InterruptedException {
         final MetaspaceLeakThread thread = new MetaspaceLeakThread();
         thread.start();
-        Thread.sleep(RUN_MS);
+        letRun(RUN_MS);
         thread.doStop();
         thread.join(TIMEOUT_MS);
         return thread;

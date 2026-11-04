@@ -23,7 +23,8 @@ final class DirectBufferCleaner {
         try {
             final Class<?> unsafeClass = ClassLoader.getPlatformClassLoader().loadClass("sun.misc.Unsafe");
             final Field theUnsafe = unsafeClass.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
+            // Only way to reach sun.misc.Unsafe; jdk.unsupported opens sun.misc for this purpose
+            theUnsafe.setAccessible(true); // NOSONAR java:S3011 required to obtain the Unsafe instance
             UNSAFE = theUnsafe.get(null);
             INVOKE_CLEANER = unsafeClass.getMethod("invokeCleaner", ByteBuffer.class);
         } catch (ReflectiveOperationException ex) {

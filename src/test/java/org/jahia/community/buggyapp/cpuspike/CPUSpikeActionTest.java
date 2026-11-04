@@ -1,5 +1,6 @@
 package org.jahia.community.buggyapp.cpuspike;
 
+import static org.jahia.community.buggyapp.TestWaits.waitFor;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -74,10 +75,4 @@ class CPUSpikeActionTest {
                 .collect(Collectors.toSet());
     }
 
-    private static void waitFor(java.util.function.BooleanSupplier condition) throws InterruptedException {
-        final long deadline = System.currentTimeMillis() + TIMEOUT_MS;
-        while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(5L);
-        }
-    }
 }

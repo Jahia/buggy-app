@@ -29,7 +29,7 @@ public abstract class AbstractBuggyAction implements Action {
         return doExecute();
     }
 
-    protected abstract Object doExecute() throws Exception;
+    protected abstract Object doExecute() throws InterruptedException;
 
     protected boolean isProductionMode() {
         final SettingsBean settings = SettingsBean.getInstance();

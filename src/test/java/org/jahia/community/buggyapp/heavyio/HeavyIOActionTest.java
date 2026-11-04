@@ -1,5 +1,6 @@
 package org.jahia.community.buggyapp.heavyio;
 
+import static org.jahia.community.buggyapp.TestWaits.waitFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -51,13 +52,6 @@ class HeavyIOActionTest {
         assertThrows(IllegalArgumentException.class, action::execute);
     }
 
-    private static void waitForFile(HeavyIOThread thread) throws InterruptedException {
-        final long deadline = System.currentTimeMillis() + TIMEOUT_MS;
-        while (thread.getFile() == null && System.currentTimeMillis() < deadline) {
-            Thread.sleep(5L);
-        }
-        assertNotNull(thread.getFile());
-    }
 
     @Test
     void workerStopsOnFirstIoFailureInsteadOfFloodingTheLog() throws Exception {
@@ -82,5 +76,10 @@ class HeavyIOActionTest {
         assertFalse(thread.isAlive(), "the worker must stop on its own after an I/O failure");
         assertNotNull(thread.getFailure());
         Files.deleteIfExists(file);
+    }
+
+    private static void waitForFile(HeavyIOThread thread) {
+        waitFor(() -> thread.getFile() != null);
+        assertNotNull(thread.getFile());
     }
 }

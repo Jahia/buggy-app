@@ -16,6 +16,10 @@ public abstract class StoppableThread extends Thread {
         stopRequested = true;
     }
 
+    /** The scenario's work; must return once {@link #keepRunning()} is false. */
+    @Override
+    public abstract void run();
+
     protected boolean keepRunning() {
         return !stopRequested;
     }

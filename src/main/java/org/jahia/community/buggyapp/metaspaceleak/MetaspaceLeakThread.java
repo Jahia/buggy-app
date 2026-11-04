@@ -1,6 +1,7 @@
 package org.jahia.community.buggyapp.metaspaceleak;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -26,8 +27,8 @@ public class MetaspaceLeakThread extends StoppableThread {
     private static final AtomicLong RUN_SEQUENCE = new AtomicLong();
     private static final int LOG_EVERY = 50_000;
     private final String classNamePrefix;
-    private volatile long classesCreated;
-    private volatile Exception failure;
+    private final AtomicLong classesCreated = new AtomicLong();
+    private final AtomicReference<Exception> failure = new AtomicReference<>();
 
     public MetaspaceLeakThread() {
         this.classNamePrefix = MetaspaceLeakThread.class.getPackageName() + ".MetaspaceObject"
@@ -40,16 +41,16 @@ public class MetaspaceLeakThread extends StoppableThread {
         final ClassPool classPool = new ClassPool(true);
         try {
             while (keepRunning()) {
-                final CtClass ctClass = classPool.makeClass(getClassName(classesCreated));
+                final CtClass ctClass = classPool.makeClass(getClassName(classesCreated.get()));
                 ctClass.toClass(MetaspaceLeakThread.class);
-                classesCreated++;
-                if (classesCreated % LOG_EVERY == 0) {
-                    LOGGER.info("{} new classes created", classesCreated);
+                final long created = classesCreated.incrementAndGet();
+                if (created % LOG_EVERY == 0) {
+                    LOGGER.info("{} new classes created", created);
                 }
             }
         } catch (CannotCompileException | RuntimeException ex) {
-            failure = ex;
-            LOGGER.error("Metaspace leak stopped after {} classes", classesCreated, ex);
+            failure.set(ex);
+            LOGGER.error("Metaspace leak stopped after {} classes", classesCreated.get(), ex);
         }
     }
 
@@ -58,10 +59,10 @@ public class MetaspaceLeakThread extends StoppableThread {
     }
 
     public long getClassesCreated() {
-        return classesCreated;
+        return classesCreated.get();
     }
 
     Exception getFailure() {
-        return failure;
+        return failure.get();
     }
 }

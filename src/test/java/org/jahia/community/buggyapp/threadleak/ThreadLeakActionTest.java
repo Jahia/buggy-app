@@ -1,11 +1,12 @@
 package org.jahia.community.buggyapp.threadleak;
 
+import static org.jahia.community.buggyapp.TestWaits.waitFor;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ class ThreadLeakActionTest {
 
         // Assert
         assertFalse(shell.isAlive());
-        assertTrue(failure.get() == null, () -> "action failed: " + failure.get());
+        assertNull(failure.get(), () -> "action failed: " + failure.get());
         assertTrue(leakedDuringRun > 10, "the scenario should leak threads while running: " + leakedDuringRun);
         waitFor(() -> newThreads(before).isEmpty());
         assertTrue(newThreads(before).isEmpty(), () -> "threads left behind: " + newThreads(before));
@@ -69,10 +70,4 @@ class ThreadLeakActionTest {
                 .collect(Collectors.toSet());
     }
 
-    private static void waitFor(BooleanSupplier condition) throws InterruptedException {
-        final long deadline = System.currentTimeMillis() + TIMEOUT_MS;
-        while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(20L);
-        }
-    }
 }

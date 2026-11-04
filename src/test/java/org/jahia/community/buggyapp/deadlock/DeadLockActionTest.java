@@ -1,11 +1,13 @@
 package org.jahia.community.buggyapp.deadlock;
 
+import static org.jahia.community.buggyapp.TestWaits.waitFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,12 +31,8 @@ class DeadLockActionTest {
         final ThreadMXBean threads = ManagementFactory.getThreadMXBean();
 
         new DeadLockAction().execute();
-        long[] deadlocked = null;
-        final long deadline = System.currentTimeMillis() + 30_000L;
-        while (deadlocked == null && System.currentTimeMillis() < deadline) {
-            Thread.sleep(200L);
-            deadlocked = threads.findMonitorDeadlockedThreads();
-        }
+        waitFor(Duration.ofSeconds(30), () -> threads.findMonitorDeadlockedThreads() != null);
+        final long[] deadlocked = threads.findMonitorDeadlockedThreads();
 
         assertNotNull(deadlocked, "no deadlock detected");
         final Set<Long> deadlockedIds = Arrays.stream(deadlocked).boxed().collect(Collectors.toSet());

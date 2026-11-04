@@ -1,5 +1,6 @@
 package org.jahia.community.buggyapp.memoryleak;
 
+import static org.jahia.community.buggyapp.TestWaits.letRun;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,7 @@ class MemoryLeakActionTest {
 
         // Act: interrupt quickly, as Ctrl-C does, before the test heap fills up
         shell.start();
-        Thread.sleep(20L);
+        letRun(20L);
         shell.interrupt();
         shell.join(5_000L);
 
