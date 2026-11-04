@@ -44,6 +44,7 @@ scenario cleanly**.
 | `buggy-app:thread-leak` | `-d` (60000) | Starts 50 async HTTP clients, each with its own `I/O dispatcher` threads (one per core) | yes | yes |
 | `buggy-app:dead-lock` | — | Two threads lock two class monitors in opposite order | no | **no — restart Jahia** |
 | `buggy-app:blocked-app` | `-d` (60000), `-n` threads (10) | One thread holds a lock for the whole duration; the `n-1` others are `BLOCKED` waiting for it | yes | yes |
+| `buggy-app:background-noise` | `-d` (600000), `-p` producers (5), `-c` clear interval (10000), `--stop` | Healthy but busy activity: producer threads allocate ~1 KB objects continuously, a consumer releases them every `-c` ms (heap sawtooth, steady GC). Start it before another scenario so the problem is not alone on an idle JVM. One instance at a time | no (background) | yes |
 | `buggy-app:db-connection-leak` | `-d` (60000), `-n` connections (0 = whole pool) | Borrows connections from Jahia's database pool without returning them: the target is reached at half of the duration, then held. Once the pool is exhausted, Jahia requests needing the database wait and fail with *Timeout: Pool empty* | yes | yes: every connection is returned at the end |
 
 Worker threads intentionally keep the JVM default names (`Thread-N`): the exercise asks trainees to find the culprit

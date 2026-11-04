@@ -46,8 +46,6 @@ public class NativeMemoryLeakThread extends StoppableThread {
         this.size = size;
         this.totalSize = totalSize;
         this.pauseBetweenSteps = duration / (totalSize / size);
-        // Runs in background: must never keep the JVM alive on shutdown
-        setDaemon(true);
     }
 
     @Override

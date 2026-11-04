@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractBuggyAction implements Action {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBuggyAction.class);
-    private static final long JOIN_TIMEOUT_MS = 5_000L;
 
     @Override
     public final Object execute() throws Exception {
@@ -48,31 +47,10 @@ public abstract class AbstractBuggyAction implements Action {
     }
 
     /**
-     * Starts the workers, waits {@code durationMs}, then stops them. The workers are stopped in every case,
-     * including when the calling (shell) thread is interrupted; the interruption is then rethrown.
+     * Starts the workers, waits {@code durationMs}, then stops them; see {@link Workers#runFor(long, List)}.
      */
     protected static void runFor(long durationMs, List<? extends StoppableThread> workers)
             throws InterruptedException {
-        try {
-            for (StoppableThread worker : workers) {
-                worker.start();
-            }
-            LOGGER.info("{} worker(s) started, waiting {} ms before stopping", workers.size(), durationMs);
-            Thread.sleep(durationMs);
-        } finally {
-            stopAndJoin(workers);
-        }
-    }
-
-    private static void stopAndJoin(List<? extends StoppableThread> workers) throws InterruptedException {
-        for (StoppableThread worker : workers) {
-            worker.doStop();
-        }
-        for (StoppableThread worker : workers) {
-            worker.join(JOIN_TIMEOUT_MS);
-            if (worker.isAlive()) {
-                LOGGER.warn("Worker {} did not stop within {} ms", worker.getName(), JOIN_TIMEOUT_MS);
-            }
-        }
+        Workers.runFor(durationMs, workers);
     }
 }
