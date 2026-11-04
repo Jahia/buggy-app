@@ -33,6 +33,17 @@ All commands are in the `buggy-app` scope. Durations are in milliseconds; sizes 
 Blocking commands keep the console busy for the whole duration. In an SSH Karaf shell, **Ctrl-C stops the
 scenario cleanly**.
 
+Behaviour of the other ways to run a command (measured on Jahia 8.2.3.2):
+
+- **`/modules/tools/karaf.jsp`**: the page stops waiting after about 10 seconds (`Shell command has timed out` in
+  the log), but the command **keeps running** until the end of its duration. A long scenario such as
+  `buggy-app:cpu-spike -d 300000` therefore works; the page just returns before it is over.
+- **Provisioning API (`karafCommand`)**: the command is interrupted after about 1 second, which stops the scenario
+  (as Ctrl-C would). Use it only for the background scenarios (`native-memory-leak`, `background-noise`) or
+  short checks.
+- With `memory-leak`, the JVM option `-XX:+HeapDumpOnOutOfMemoryError` of the Jahia images writes the heap dump in
+  the working directory of the Tomcat process (`/tmp/java_pid<PID>.hprof` in the Docker images).
+
 | Command | Options (default) | What it does | Blocking | Recovers on its own |
 |---|---|---|---|---|
 | `buggy-app:cpu-spike` | `-d` (60000), `-n` threads (1) | Busy loops in `n` threads | yes | yes |
