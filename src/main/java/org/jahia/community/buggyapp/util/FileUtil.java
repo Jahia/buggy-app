@@ -1,6 +1,7 @@
 package org.jahia.community.buggyapp.util;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,6 +24,9 @@ public final class FileUtil {
         final StringBuilder contentBuilder = new StringBuilder();
         try (Stream<String> stream = Files.lines(file, StandardCharsets.UTF_8)) {
             stream.forEach(line -> contentBuilder.append(line).append('\n'));
+        } catch (UncheckedIOException ex) {
+            // Files.lines() reports read errors lazily, wrapped in an unchecked exception
+            throw ex.getCause();
         }
         return contentBuilder.toString();
     }

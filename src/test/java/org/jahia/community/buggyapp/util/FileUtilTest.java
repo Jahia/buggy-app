@@ -29,6 +29,12 @@ class FileUtilTest {
     }
 
     @Test
+    void readOfADirectoryFailsWithACheckedIOException() {
+        // Files.lines() opens a directory fine and only fails while streaming, with UncheckedIOException
+        assertThrows(IOException.class, () -> FileUtil.read(tempDir));
+    }
+
+    @Test
     void writeToUnwritableLocationFailsSoTheCallerCanStop() {
         // tempDir is a directory: writing to it as a file fails
         assertThrows(IOException.class, () -> FileUtil.write(tempDir, "content"));
